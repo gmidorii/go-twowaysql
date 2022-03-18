@@ -16,6 +16,8 @@ import (
 func Eval(inputQuery string, inputParams interface{}) (string, []interface{}, error) {
 	mapParams := map[string]interface{}{}
 
+	query := formatQuery(inputQuery)
+
 	if inputParams != nil {
 		if err := encode(mapParams, inputParams); err != nil {
 			return "", nil, err
@@ -24,7 +26,7 @@ func Eval(inputQuery string, inputParams interface{}) (string, []interface{}, er
 		mapParams = nil
 	}
 
-	tokens, err := tokenize(inputQuery)
+	tokens, err := tokenize(query)
 	if err != nil {
 		return "", nil, err
 	}
@@ -108,6 +110,15 @@ func arrangeWhiteSpace(str string) string {
 	}
 	ret = buff.String()
 	return strings.Trim(ret, " ")
+}
+
+// formatQuery formats a query.
+// It converts line breaks and tabs to spaces and trims leading and trailing edges.
+func formatQuery(q string) string {
+	q = strings.ReplaceAll(q, "\n", " ")
+	q = strings.ReplaceAll(q, "\t", " ")
+	q = strings.TrimSpace(q)
+	return q
 }
 
 type encoder struct {

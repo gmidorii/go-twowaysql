@@ -78,8 +78,49 @@ func TestEval(t *testing.T) {
 			wantParams:  []interface{}{},
 		},
 		{
+			name: "if false elif false else (multiline)",
+			input: `
+			SELECT
+				*
+			FROM
+				person
+			WHERE
+				employee_no < 1000
+				/* IF false */
+				AND dept_no = 1
+				/* ELIF false */
+				AND boss_no = 2
+				/* ELSE */
+				AND id = 3
+				/* END */
+			`,
+			inputParams: Info{},
+			wantQuery:   `SELECT * FROM person WHERE employee_no < 1000 AND id = 3`,
+			wantParams:  []interface{}{},
+		},
+		{
 			name:  "bind parameter",
 			input: `SELECT * FROM person WHERE employee_no < /*maxEmpNo*/1000`,
+			inputParams: Info{
+				Name:       "Jeff",
+				MaxEmpNo:   3,
+				DeptNo:     12,
+				GenderList: []string{"M", "F"},
+				IntList:    []int{1, 2, 3},
+			},
+			wantQuery:  `SELECT * FROM person WHERE employee_no < ?/*maxEmpNo*/`,
+			wantParams: []interface{}{3},
+		},
+		{
+			name: "bind parameter (multiline)",
+			input: `
+			SELECT
+			*
+			FROM
+				person
+			WHERE
+				employee_no < /*maxEmpNo*/1000
+			`,
 			inputParams: Info{
 				Name:       "Jeff",
 				MaxEmpNo:   3,
@@ -106,6 +147,34 @@ func TestEval(t *testing.T) {
 		{
 			name:  "if nest",
 			input: `SELECT * FROM person WHERE employee_no < 1000 /* IF true */ /* IF false */ AND dept_no =1 /* ELSE */ AND id=3 /* END */ /* ELSE*/ AND boss_id=4 /* END */`,
+			inputParams: Info{
+				Name:       "Jeff",
+				MaxEmpNo:   3,
+				DeptNo:     12,
+				GenderList: []string{"M", "F"},
+				IntList:    []int{1, 2, 3},
+			},
+			wantQuery:  `SELECT * FROM person WHERE employee_no < 1000 AND id=3`,
+			wantParams: []interface{}{},
+		},
+		{
+			name: "if nest (multiline)",
+			input: `
+			SELECT
+				*
+			FROM
+				person
+			WHERE
+				employee_no < 1000
+				/* IF true */
+					/* IF false */
+					AND dept_no =1
+					/* ELSE */
+					AND id=3
+					/* END */
+				/* ELSE*/
+				AND boss_id=4
+				/* END */`,
 			inputParams: Info{
 				Name:       "Jeff",
 				MaxEmpNo:   3,
@@ -158,6 +227,27 @@ func TestEval(t *testing.T) {
 				IntList:    []int{1, 2, 3},
 			},
 			wantQuery: `INSERT INTO persons (employee_no, dept_no, first_name, last_name, email) VALUES(?/*maxEmpNo*/, ?/*deptNo*/)`,
+			wantParams: []interface{}{
+				3,
+				12,
+			},
+		},
+		{
+			name: "insert (multiline)",
+			input: `
+			INSERT INTO persons
+				(employee_no, dept_no, first_name, last_name, email)
+			VALUES
+				(/*maxEmpNo*/1, /*deptNo*/1)
+			`,
+			inputParams: Info{
+				Name:       "Jeff",
+				MaxEmpNo:   3,
+				DeptNo:     12,
+				GenderList: []string{"M", "F"},
+				IntList:    []int{1, 2, 3},
+			},
+			wantQuery: `INSERT INTO persons (employee_no, dept_no, first_name, last_name, email) VALUES (?/*maxEmpNo*/, ?/*deptNo*/)`,
 			wantParams: []interface{}{
 				3,
 				12,
